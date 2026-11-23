@@ -161,7 +161,7 @@
                 <span class="text-xs text-zinc-500">| Independent Single-Seater Journalism</span>
             </div>
             <div class="flex items-center gap-4 text-xs text-zinc-400">
-                <button onclick="resetDemoData()" class="hover:text-racing-cyan transition-colors underline underline-offset-4">Restore Default Sample Reports</button>
+                <span>Your Official Editorial Archive</span>
             </div>
         </div>
     </footer>
@@ -176,11 +176,15 @@
                 <!-- Top Sticky Action Bar -->
                 <div class="sticky top-0 z-20 flex items-center justify-between px-5 py-3.5 bg-paddock-900/95 backdrop-blur-md border-b border-zinc-800">
                     <div class="flex items-center gap-2.5">
-                        <span id="reader-series-badge" class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider">F1</span>
-                        <span id="reader-circuit-top" class="text-xs font-mono text-zinc-400 truncate max-w-[200px] sm:max-w-md">Circuit Name</span>
+                        <span id="reader-series-badge" class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider">F4</span>
+                        <span id="reader-circuit-top" class="text-xs font-mono text-zinc-400 truncate max-w-[180px] sm:max-w-md">Circuit Name</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button id="reader-delete-btn" onclick="requestDeleteCurrentArticle()" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors">
+                        <button id="reader-edit-btn" onclick="editCurrentArticle()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/10 text-racing-cyan hover:bg-cyan-500/20 border border-cyan-500/25 transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            Edit / Photo
+                        </button>
+                        <button id="reader-delete-btn" onclick="requestDeleteCurrentArticle()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors cursor-pointer">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             Delete
                         </button>
@@ -280,7 +284,7 @@
                 <div class="flex items-center justify-between px-6 py-4 bg-paddock-950 border-b border-zinc-800">
                     <div class="flex items-center gap-2.5">
                         <span class="w-2.5 h-2.5 rounded-full bg-racing-red"></span>
-                        <h2 class="text-lg font-black uppercase tracking-tight text-white">Publish Race Dispatch</h2>
+                        <h2 id="publisher-modal-title" class="text-lg font-black uppercase tracking-tight text-white">Publish Race Dispatch</h2>
                     </div>
                     <button onclick="closePublisherModal()" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -289,6 +293,7 @@
 
                 <!-- Publisher Form -->
                 <form id="publish-form" onsubmit="handlePublishSubmit(event)" class="p-6 space-y-5">
+                    <input type="hidden" id="edit-article-id" value="">
                     
                     <!-- Row 1: Series Selection & Race/GP Title -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -381,7 +386,7 @@
                         <button type="button" onclick="closePublisherModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition-colors">
                             Cancel
                         </button>
-                        <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-racing-red hover:bg-red-600 shadow-lg shadow-red-600/25 transition-all cursor-pointer">
+                        <button type="submit" id="publisher-submit-btn" class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-racing-red hover:bg-red-600 shadow-lg shadow-red-600/25 transition-all cursor-pointer">
                             Publish to Paddock
                         </button>
                     </div>
@@ -393,7 +398,7 @@
 
     <script>
         // =========================================================================
-        // 1. CUSTOM SVG MOTORSPORT GRAPHICS GENERATOR (Crisp, reliable track art)
+        // 1. CUSTOM SVG MOTORSPORT GRAPHICS GENERATOR (Fallback & Stylized Art)
         // =========================================================================
         function createTrackCardArt(series, circuitTitle, accentHex, secondaryHex, trackPath) {
             const svg = `
@@ -426,7 +431,7 @@
 
                 <!-- Typography Overlay -->
                 <text x="48" y="88" fill="${accentHex}" font-family="monospace" font-weight="bold" font-size="18" letter-spacing="4">APEX TELEMETRY // ${series}</text>
-                <text x="48" y="155" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="44" letter-spacing="-1">${circuitTitle}</text>
+                <text x="48" y="155" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="40" letter-spacing="-1">${circuitTitle}</text>
                 <rect x="48" y="182" width="90" height="5" rx="2.5" fill="${secondaryHex}"/>
                 
                 <!-- Corner Sector Bars -->
@@ -441,19 +446,49 @@
         }
 
         // =========================================================================
-        // 2. PRE-POPULATED REALISTIC SAMPLE ARTICLES (F1, F2, F3, F4)
+        // 2. INITIAL USER ARTICLE (73rd Macau Grand Prix – FIA F4 World Cup)
         // =========================================================================
-        const DEFAULT_ARTICLES = [
-          
-             
+        const INITIAL_ARTICLES = [
             {
-               
+                id: 'macau-f4-world-cup-2026',
+                series: 'F4',
+                raceTitle: '73rd Macau Grand Prix – FIA F4 World Cup • Guia Circuit, Macau',
+                headline: 'Craigie Wins Chaos-Hit Macau F4 World Cup as Aussie Killion Escapes 10-Car Pile-Up',
+                podium: 'P1 Kenzo Craigie (R-ace GP) • P2 Oleksandr Bondarev (SJM Theodore Racing) • P3 Theo Palmer (Hitech)',
+                author: 'Paddock Correspondent',
+                date: 'November 22, 2026',
+                isCustom: true,
+                image: 'https://images.unsplash.com/photo-1541443131876-44b03de101c5?auto=format&fit=crop&w=1400&q=85',
+                report: `Mercedes junior Kenzo Craigie clinched victory in the 10-lap 73rd Macau Grand Prix FIA F4 World Cup after surviving a massive opening-lap pile-up and fending off a relentless challenge from Oleksandr Bondarev.
+
+Drama erupted on the very first lap when Dutch driver Kasper Schormans collided with another car, triggering a multi-car chain reaction that brought out the red flag. Extensive damage to his MP Motorsport machine forced Schormans into an immediate retirement, ending his Macau campaign before it truly began.
+
+AU4 Champion Noah Killion narrowly escaped the worst of the wreckage, though contact from Kimi Yu Tsai Chan left Killion with rear-left suspension and tyre damage. During the 28-minute red-flag stoppage, Killion's US Racing mechanics worked against the clock to repair the rear-left corner, allowing him to rejoin the restarted race and salvage fifth place after post-race penalties.
+
+Ten drivers were not so fortunate, eliminated on the spot in the Macau madness:
+
+• Kimi Yu Tsai Chan – Campos Racing (DNF)
+• Jarrett Clark – Hitech (DNF)
+• Kasper Schormans – MP Motorsport (DNF)
+• David Cosma-Cristofor – Evans GP (DNF)
+• Yu Yan – Asia Racing Team RFN (DNF)
+• Ludovic Busso – Argenti Motorsport (DNF)
+• Felipe Reijs – Argenti Motorsport (DNF)
+• Hoai Nam Anh Nguyen – Evans GP (DNF)
+• Si Lun Vernice Lao – Asia Racing Team RFN (DNF)
+• Andy Consani – R-ace GP (DNF)
+
+Post-Race Steward Drama
+
+The final classification was shaken up after the chequered flag when both Noah Monteiro and Dries Van Langendonck were hit with 30-second time penalties for breaching Article 39.4 b) of the sporting regulations after their teams connected laptops to their cars during the red flag stoppage. The penalty proved especially costly for SJM Theodore Racing's Monteiro, who lost a hard-fought fourth place on the road and dropped to 10th—promoting Campos Racing's Scott Kin Lindblom to fourth and lifting Noah Killion into fifth. Van Langendonck fell from 11th to 12th, the final classified finisher.`,
+                analysis: `Once the race resumed behind the Safety Car with just 12 cars remaining, the contest turned into a high-speed game of cat and mouse between R-ace GP's Kenzo Craigie and SJM Theodore Racing's Oleksandr Bondarev. Bondarev stayed glued to Craigie's gearbox down the long run into Lisboa corner, repeatedly using the slipstream to pull alongside. However, Craigie placed his car defensively every single lap before dropping a new F4 race lap record of 2:22.232 on the penultimate tour to break the tow and seal the win by just 0.542 seconds ahead of Bondarev and Hitech's Theo Palmer.`
+            }
         ];
 
         // =========================================================================
         // 3. STATE MANAGEMENT & LOCALSTORAGE PERSISTENCE
         // =========================================================================
-        const STORAGE_KEY = 'apex_paddock_articles_v1';
+        const STORAGE_KEY = 'apex_paddock_user_articles_v1';
         let articles = [];
         let activeCategory = 'ALL';
         let activeArticleId = null;
@@ -462,19 +497,19 @@
         function initApp() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
+                if (saved !== null) {
                     articles = JSON.parse(saved);
-                    if (!Array.isArray(articles) || articles.length === 0) {
-                        articles = [...DEFAULT_ARTICLES];
+                    if (!Array.isArray(articles)) {
+                        articles = [...INITIAL_ARTICLES];
                         saveArticles();
                     }
                 } else {
-                    articles = [...DEFAULT_ARTICLES];
+                    articles = [...INITIAL_ARTICLES];
                     saveArticles();
                 }
             } catch (e) {
-                console.error('Storage load error, using default articles:', e);
-                articles = [...DEFAULT_ARTICLES];
+                console.error('Storage load error, using initial article:', e);
+                articles = [...INITIAL_ARTICLES];
             }
             renderArticles();
         }
@@ -485,15 +520,6 @@
             } catch (e) {
                 showToast('Storage limit reached. Consider using an external image URL instead of a large file.', 'error');
             }
-        }
-
-        function resetDemoData() {
-            articles = [...DEFAULT_ARTICLES];
-            saveArticles();
-            activeCategory = 'ALL';
-            updateCategoryTabStyles();
-            renderArticles();
-            showToast('Default F1, F2, F3 & F4 sample reports restored.', 'info');
         }
 
         // =========================================================================
@@ -637,12 +663,17 @@
                                 </svg>
                                 <span>Includes Race Analysis</span>
                             </div>
-                            <span class="text-xs font-bold uppercase tracking-wider text-zinc-300 group-hover:text-white flex items-center gap-1">
-                                Read Dispatch
-                                <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </span>
+                            <div class="flex items-center gap-3">
+                                <button type="button" onclick="event.stopPropagation(); openEditArticleModal('${article.id}');" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 hover:text-racing-cyan transition-colors px-2 py-1 rounded bg-zinc-800/70 hover:bg-zinc-800">
+                                    Edit
+                                </button>
+                                <span class="text-xs font-bold uppercase tracking-wider text-zinc-300 group-hover:text-white flex items-center gap-1">
+                                    Read Dispatch
+                                    <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </article>
@@ -651,7 +682,7 @@
         }
 
         // =========================================================================
-        // 6. FULL ARTICLE READER MODAL & DELETE WORKFLOW
+        // 6. FULL ARTICLE READER MODAL & EDIT/DELETE WORKFLOW
         // =========================================================================
         function openReaderModal(id) {
             const article = articles.find(a => a.id === id);
@@ -684,20 +715,17 @@
             imgEl.onerror = function() { this.onerror = null; this.src = fallbackImg; };
             imgEl.src = article.image || fallbackImg;
 
-            // Show delete button for user-created articles (or any article the user wants to manage)
-            const deleteBtn = document.getElementById('reader-delete-btn');
-            if (article.isCustom) {
-                deleteBtn.classList.remove('hidden');
-                deleteBtn.classList.add('inline-flex');
-            } else {
-                deleteBtn.classList.add('hidden');
-                deleteBtn.classList.remove('inline-flex');
-            }
-
             const modal = document.getElementById('reader-modal');
             modal.classList.remove('hidden');
             modal.scrollTop = 0;
             document.body.style.overflow = 'hidden';
+        }
+
+        function editCurrentArticle() {
+            if (!activeArticleId) return;
+            const idToEdit = activeArticleId;
+            closeReaderModal();
+            openEditArticleModal(idToEdit);
         }
 
         function closeReaderModal() {
@@ -728,10 +756,47 @@
         // =========================================================================
         function openPublisherModal() {
             document.getElementById('publish-form').reset();
+            document.getElementById('edit-article-id').value = '';
+            document.getElementById('publisher-modal-title').textContent = 'Publish Race Dispatch';
+            document.getElementById('publisher-submit-btn').textContent = 'Publish to Paddock';
             clearSelectedPhoto();
             if (activeCategory !== 'ALL') {
                 document.getElementById('input-series').value = activeCategory;
             }
+            document.getElementById('publisher-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function openEditArticleModal(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            document.getElementById('publish-form').reset();
+            clearSelectedPhoto();
+
+            document.getElementById('edit-article-id').value = article.id;
+            document.getElementById('publisher-modal-title').textContent = 'Edit Race Dispatch';
+            document.getElementById('publisher-submit-btn').textContent = 'Save Changes';
+
+            document.getElementById('input-series').value = article.series;
+            document.getElementById('input-race').value = article.raceTitle;
+            document.getElementById('input-headline').value = article.headline;
+            document.getElementById('input-podium').value = article.podium || '';
+            document.getElementById('input-author').value = article.author || '';
+            document.getElementById('input-report').value = article.report;
+            document.getElementById('input-analysis').value = article.analysis;
+
+            if (article.image) {
+                if (article.image.startsWith('data:image/')) {
+                    pendingPhotoDataUrl = article.image;
+                    document.getElementById('file-upload-label').textContent = 'Uploaded Photo Attached';
+                    showPhotoPreview(article.image);
+                } else {
+                    document.getElementById('input-photo-url').value = article.image;
+                    showPhotoPreview(article.image);
+                }
+            }
+
             document.getElementById('publisher-modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
@@ -797,6 +862,7 @@
         function handlePublishSubmit(event) {
             event.preventDefault();
 
+            const editId = document.getElementById('edit-article-id').value;
             const series = document.getElementById('input-series').value;
             const raceTitle = document.getElementById('input-race').value.trim();
             const headline = document.getElementById('input-headline').value.trim();
@@ -820,9 +886,31 @@
                 'M 455 165 C 510 120 620 125 665 175 C 700 215 655 295 585 305 C 510 315 435 275 440 215 C 442 190 445 175 455 165 Z'
             );
 
+            if (editId) {
+                const idx = articles.findIndex(a => a.id === editId);
+                if (idx !== -1) {
+                    articles[idx] = {
+                        ...articles[idx],
+                        series,
+                        raceTitle,
+                        headline,
+                        podium: podium || 'Official Race Classification',
+                        author,
+                        image: finalImage,
+                        report,
+                        analysis
+                    };
+                    saveArticles();
+                    closePublisherModal();
+                    renderArticles();
+                    showToast(`Updated "${headline}"!`, 'success');
+                    return;
+                }
+            }
+
             const today = new Date().toLocaleDateString('en-US', {
-                month: 'short',
-                day: '2-digit',
+                month: 'long',
+                day: 'numeric',
                 year: 'numeric'
             });
 

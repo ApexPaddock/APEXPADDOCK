@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APEX PADDOCK | F1, F2, F3 & F4 Motorsport Journalism</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        paddock: {
+                            950: '#09090b',
+                            900: '#121216',
+                            800: '#1c1c22',
+                            700: '#272730',
+                        },
+                        racing: {
+                            red: '#ef4444',
+                            crimson: '#dc2626',
+                            cyan: '#06b6d4',
+                            amber: '#f59e0b',
+                            emerald: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-paddock-950 text-zinc-100 font-sans antialiased selection:bg-racing-red selection:text-white min-h-screen flex flex-col">
+
+    <!-- Toast Notification Banner (Replaces alert/confirm) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 z-40 bg-paddock-950/90 backdrop-blur-md border-b border-zinc-800/80">
+        <!-- Top Racing Stripe Accent -->
+        <div class="h-1 w-full bg-gradient-to-r from-racing-red via-racing-cyan to-racing-red"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between py-4 gap-4">
+                
+                <!-- Brand Identity -->
+                <div class="flex items-center justify-between">
+                    <a href="#" onclick="filterCategory('ALL'); return false;" class="flex items-center gap-3 group">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-racing-red to-red-700 flex items-center justify-center shadow-lg shadow-red-600/20 group-hover:scale-105 transition-transform">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl font-black tracking-tighter uppercase italic text-white">APEX<span class="text-racing-red">PADDOCK</span></span>
+                                <span class="hidden sm:inline-block text-[10px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-zinc-800 text-racing-cyan border border-zinc-700">Live Telemetry</span>
+                            </div>
+                            <p class="text-xs text-zinc-400 font-medium tracking-wide">Formula 1 • F2 • F3 • F4 Race Desk</p>
+                        </div>
+                    </a>
+
+                    <!-- Mobile Publish Button -->
+                    <button onclick="openPublisherModal()" class="md:hidden inline-flex items-center gap-1.5 bg-racing-red hover:bg-red-600 text-white font-bold text-xs px-3.5 py-2.5 rounded-lg shadow-lg shadow-red-600/20 transition-all active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        Publish
+                    </button>
+                </div>
+
+                <!-- Navigation Filter Tabs & Desktop Publish Action -->
+                <div class="flex items-center justify-between md:justify-end gap-3 overflow-x-auto pb-1 md:pb-0">
+                    <nav id="category-tabs" class="flex items-center gap-1.5 bg-paddock-900 p-1 rounded-xl border border-zinc-800">
+                        <button data-cat="ALL" onclick="filterCategory('ALL')" class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-zinc-800 text-white shadow-sm">
+                            All Series
+                        </button>
+                        <button data-cat="F1" onclick="filterCategory('F1')" class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-zinc-400 hover:text-white">
+                            F1
+                        </button>
+                        <button data-cat="F2" onclick="filterCategory('F2')" class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-zinc-400 hover:text-white">
+                            F2
+                        </button>
+                        <button data-cat="F3" onclick="filterCategory('F3')" class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-zinc-400 hover:text-white">
+                            F3
+                        </button>
+                        <button data-cat="F4" onclick="filterCategory('F4')" class="cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-zinc-400 hover:text-white">
+                            F4
+                        </button>
+                    </nav>
+
+                    <button onclick="openPublisherModal()" class="hidden md:inline-flex items-center gap-2 bg-racing-red hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl shadow-lg shadow-red-600/25 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Publish Article
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Editorial Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Editorial Sub-bar / Filter Status -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-4 border-b border-zinc-800/80">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-racing-red animate-pulse"></span>
+                    <h1 id="feed-heading" class="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase">Latest Race Reports & Analysis</h1>
+                </div>
+                <p id="feed-subtitle" class="text-sm text-zinc-400 mt-1">In-depth paddock dispatches, tire degradation breakdowns, and feeder series scouting.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <input type="text" id="search-input" oninput="renderArticles()" placeholder="Search circuit, driver, headline..." 
+                        class="w-full sm:w-64 bg-paddock-900 border border-zinc-800 focus:border-racing-cyan rounded-xl pl-9 pr-4 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none transition-colors">
+                    <svg class="w-4 h-4 text-zinc-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <span id="article-count" class="text-xs font-mono text-zinc-400 bg-paddock-900 px-3 py-2 rounded-xl border border-zinc-800 whitespace-nowrap">
+                    4 Reports
+                </span>
+            </div>
+        </div>
+
+        <!-- Article Feed Grid -->
+        <div id="articles-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+            <!-- Cards injected via JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-20 bg-paddock-900/50 rounded-2xl border border-dashed border-zinc-800">
+            <div class="w-16 h-16 rounded-2xl bg-zinc-800/80 flex items-center justify-center mx-auto mb-4 text-zinc-400">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-white">No race reports found</h3>
+            <p class="text-sm text-zinc-400 max-w-md mx-auto mt-1 mb-6">There are no published dispatches matching your current series filter or search query.</p>
+            <button onclick="openPublisherModal()" class="inline-flex items-center gap-2 bg-racing-red hover:bg-red-600 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition-all">
+                + Write First Report
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-800/80 bg-paddock-900/60 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-black tracking-tighter uppercase italic text-white">APEX<span class="text-racing-red">PADDOCK</span></span>
+                <span class="text-xs text-zinc-500">| Independent Single-Seater Journalism</span>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-zinc-400">
+                <button onclick="resetDemoData()" class="hover:text-racing-cyan transition-colors underline underline-offset-4">Restore Default Sample Reports</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===================================================================== -->
+    <!-- FULL ARTICLE READER MODAL                                             -->
+    <!-- ===================================================================== -->
+    <div id="reader-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/85 backdrop-blur-sm p-2 sm:p-6">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="relative w-full max-w-4xl bg-paddock-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden my-4">
+                
+                <!-- Top Sticky Action Bar -->
+                <div class="sticky top-0 z-20 flex items-center justify-between px-5 py-3.5 bg-paddock-900/95 backdrop-blur-md border-b border-zinc-800">
+                    <div class="flex items-center gap-2.5">
+                        <span id="reader-series-badge" class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider">F1</span>
+                        <span id="reader-circuit-top" class="text-xs font-mono text-zinc-400 truncate max-w-[200px] sm:max-w-md">Circuit Name</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="reader-delete-btn" onclick="requestDeleteCurrentArticle()" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            Delete
+                        </button>
+                        <button onclick="closeReaderModal()" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors" aria-label="Close article">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Delete Confirmation Inline Banner (Replaces confirm()) -->
+                <div id="delete-confirm-bar" class="hidden bg-red-950/90 border-b border-red-800 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <p class="text-xs font-medium text-red-200">Are you sure you want to permanently remove this article from your publication?</p>
+                    <div class="flex items-center gap-2">
+                        <button onclick="cancelDeleteArticle()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-zinc-800 text-zinc-300 hover:bg-zinc-700">Cancel</button>
+                        <button onclick="confirmDeleteArticle()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-500">Yes, Delete Article</button>
+                    </div>
+                </div>
+
+                <!-- Hero Photo Directly Above Headline -->
+                <div class="w-full aspect-video max-h-[440px] bg-zinc-950 relative overflow-hidden border-b border-zinc-800">
+                    <img id="reader-image" src="" alt="Race Photography" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-paddock-900 via-transparent to-transparent opacity-70"></div>
+                    <div class="absolute bottom-3 left-5 right-5 flex items-center justify-between text-[11px] font-mono text-zinc-300">
+                        <span id="reader-photo-caption" class="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md border border-white/10">Official Trackside Dispatch</span>
+                        <span id="reader-date" class="bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-md border border-white/10">Date</span>
+                    </div>
+                </div>
+
+                <!-- Article Content Body -->
+                <div class="p-6 sm:p-10">
+                    <!-- Headline -->
+                    <h1 id="reader-headline" class="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight mb-6">
+                        Article Headline
+                    </h1>
+
+                    <!-- Race Metadata / Podium Strip -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-paddock-950 border border-zinc-800 mb-8">
+                        <div>
+                            <span class="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">Grand Prix / Round</span>
+                            <span id="reader-race-title" class="text-sm font-bold text-zinc-100 mt-0.5 block">Race Name</span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">Podium / Winner Summary</span>
+                            <span id="reader-podium" class="text-sm font-bold text-racing-cyan mt-0.5 block">P1 Driver • P2 Driver • P3 Driver</span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">Correspondent</span>
+                            <span id="reader-author" class="text-sm font-semibold text-zinc-300 mt-0.5 block">Paddock Desk</span>
+                        </div>
+                    </div>
+
+                    <!-- Main Race Report -->
+                    <div class="mb-10">
+                        <h2 class="text-xs font-mono uppercase tracking-widest text-racing-red font-bold mb-3 flex items-center gap-2">
+                            <span class="w-4 h-0.5 bg-racing-red"></span>
+                            Race Report
+                        </h2>
+                        <div id="reader-report" class="space-y-4 text-zinc-300 text-base leading-relaxed whitespace-pre-line">
+                            <!-- Race Report Paragraphs -->
+                        </div>
+                    </div>
+
+                    <!-- Dedicated Race Analysis & Telemetry Breakdown Section -->
+                    <div class="rounded-2xl bg-gradient-to-br from-paddock-950 to-zinc-900 border border-racing-cyan/30 p-6 sm:p-8 shadow-inner relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-racing-cyan/5 rounded-full blur-2xl pointer-events-none"></div>
+                        <div class="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-zinc-800">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-racing-cyan/10 border border-racing-cyan/30 flex items-center justify-center text-racing-cyan">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-base sm:text-lg font-black uppercase tracking-tight text-white">Race Analysis & Telemetry Breakdown</h3>
+                                    <p class="text-[11px] font-mono text-racing-cyan">Strategy • Tire Degradation • Sector Pace</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="reader-analysis" class="space-y-4 text-zinc-200 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+                            <!-- Race Analysis Paragraphs -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- ARTICLE PUBLISHER / EDITOR MODAL                                      -->
+    <!-- ===================================================================== -->
+    <div id="publisher-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/85 backdrop-blur-sm p-2 sm:p-6">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="relative w-full max-w-3xl bg-paddock-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden my-4">
+                
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 bg-paddock-950 border-b border-zinc-800">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-racing-red"></span>
+                        <h2 class="text-lg font-black uppercase tracking-tight text-white">Publish Race Dispatch</h2>
+                    </div>
+                    <button onclick="closePublisherModal()" class="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Publisher Form -->
+                <form id="publish-form" onsubmit="handlePublishSubmit(event)" class="p-6 space-y-5">
+                    
+                    <!-- Row 1: Series Selection & Race/GP Title -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label for="input-series" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Championship *</label>
+                            <select id="input-series" required class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-red rounded-xl px-3.5 py-2.5 text-sm font-bold text-white outline-none">
+                                <option value="F1">Formula 1 (F1)</option>
+                                <option value="F2">Formula 2 (F2)</option>
+                                <option value="F3">Formula 3 (F3)</option>
+                                <option value="F4">Formula 4 (F4)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="input-race" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Race / Grand Prix & Circuit *</label>
+                            <input type="text" id="input-race" required placeholder="e.g., British Grand Prix • Silverstone"
+                                class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-red rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Headline -->
+                    <div>
+                        <label for="input-headline" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Article Headline *</label>
+                        <input type="text" id="input-headline" required placeholder="e.g., Masterclass in Wet-Weather Strategy Seals Dramatic Victory"
+                            class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-red rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white placeholder-zinc-500 outline-none">
+                    </div>
+
+                    <!-- Row 3: Podium Summary & Author -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="sm:col-span-2">
+                            <label for="input-podium" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Podium / Key Result Summary</label>
+                            <input type="text" id="input-podium" placeholder="e.g., P1 Norris • P2 Verstappen • P3 Piastri"
+                                class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-cyan rounded-xl px-3.5 py-2 text-sm text-white placeholder-zinc-500 outline-none">
+                        </div>
+                        <div>
+                            <label for="input-author" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Journalist / Byline</label>
+                            <input type="text" id="input-author" placeholder="e.g., Alex Vance"
+                                class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-cyan rounded-xl px-3.5 py-2 text-sm text-white placeholder-zinc-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Featured Photo Upload OR Image URL -->
+                    <div class="p-4 rounded-xl bg-paddock-950 border border-zinc-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-zinc-300">Featured Race Photography (Displayed Above Text)</label>
+                            <span class="text-[11px] font-mono text-zinc-500">Upload or Paste URL</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Device File Upload -->
+                            <div>
+                                <label for="input-photo-file" class="flex items-center justify-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-zinc-700 hover:border-racing-cyan bg-paddock-900 cursor-pointer text-xs font-semibold text-zinc-300 hover:text-white transition-colors">
+                                    <svg class="w-4 h-4 text-racing-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <span id="file-upload-label">Upload Photo from Device</span>
+                                </label>
+                                <input type="file" id="input-photo-file" accept="image/*" onchange="handleFileUpload(event)" class="hidden">
+                            </div>
+
+                            <!-- Image URL Input -->
+                            <div>
+                                <input type="url" id="input-photo-url" oninput="handleUrlInput(event)" placeholder="Or paste image URL (https://...)"
+                                    class="w-full bg-paddock-900 border border-zinc-700 focus:border-racing-cyan rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Live Image Preview -->
+                        <div id="photo-preview-wrapper" class="hidden relative rounded-xl overflow-hidden border border-zinc-700 aspect-video max-h-48 bg-black">
+                            <img id="photo-preview-img" src="" alt="Preview" class="w-full h-full object-cover">
+                            <button type="button" onclick="clearSelectedPhoto()" class="absolute top-2 right-2 bg-black/75 hover:bg-red-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg transition-colors">
+                                Remove Photo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Main Race Report -->
+                    <div>
+                        <label for="input-report" class="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1.5">Main Race Report *</label>
+                        <textarea id="input-report" rows="4" required placeholder="Write the narrative of the race: start drama, key overtakes, safety cars, and the checkered flag battle..."
+                            class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-red rounded-xl p-3.5 text-sm text-white placeholder-zinc-500 outline-none leading-relaxed"></textarea>
+                    </div>
+
+                    <!-- Row 6: Race Analysis & Telemetry Breakdown -->
+                    <div>
+                        <label for="input-analysis" class="block text-xs font-bold uppercase tracking-wider text-racing-cyan mb-1.5">Race Analysis & Telemetry Breakdown *</label>
+                        <textarea id="input-analysis" rows="4" required placeholder="Analyze pit stop windows, tire compound degradation, sector times, aerodynamic setup trade-offs, or driver telemetry..."
+                            class="w-full bg-paddock-950 border border-zinc-700 focus:border-racing-cyan rounded-xl p-3.5 text-sm text-white placeholder-zinc-500 outline-none leading-relaxed"></textarea>
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+                        <button type="button" onclick="closePublisherModal()" class="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white bg-racing-red hover:bg-red-600 shadow-lg shadow-red-600/25 transition-all cursor-pointer">
+                            Publish to Paddock
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. CUSTOM SVG MOTORSPORT GRAPHICS GENERATOR (Crisp, reliable track art)
+        // =========================================================================
+        function createTrackCardArt(series, circuitTitle, accentHex, secondaryHex, trackPath) {
+            const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+                <defs>
+                    <linearGradient id="bg-${series}" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#09090b"/>
+                        <stop offset="55%" stop-color="#141419"/>
+                        <stop offset="100%" stop-color="#1f1f27"/>
+                    </linearGradient>
+                    <pattern id="grid-${series}" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+                    </pattern>
+                </defs>
+                <rect width="800" height="450" fill="url(#bg-${series})"/>
+                <rect width="800" height="450" fill="url(#grid-${series})"/>
+                
+                <!-- Dynamic Speed Lines -->
+                <polygon points="0,390 800,270 800,310 0,430" fill="${accentHex}" fill-opacity="0.14"/>
+                <polygon points="0,420 800,320 800,335 0,435" fill="${secondaryHex}" fill-opacity="0.22"/>
+                
+                <!-- Telemetry Circle Glow -->
+                <circle cx="580" cy="210" r="145" fill="none" stroke="${accentHex}" stroke-opacity="0.18" stroke-width="2" stroke-dasharray="8 6"/>
+                <circle cx="580" cy="210" r="110" fill="none" stroke="${secondaryHex}" stroke-opacity="0.15" stroke-width="1.5"/>
+
+                <!-- Stylized Circuit Map Vector -->
+                <path d="${trackPath}" fill="none" stroke="#000000" stroke-opacity="0.5" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" transform="translate(4,6)"/>
+                <path d="${trackPath}" fill="none" stroke="${accentHex}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="${trackPath}" fill="none" stroke="#ffffff" stroke-opacity="0.65" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="14 10"/>
+
+                <!-- Typography Overlay -->
+                <text x="48" y="88" fill="${accentHex}" font-family="monospace" font-weight="bold" font-size="18" letter-spacing="4">APEX TELEMETRY // ${series}</text>
+                <text x="48" y="155" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="44" letter-spacing="-1">${circuitTitle}</text>
+                <rect x="48" y="182" width="90" height="5" rx="2.5" fill="${secondaryHex}"/>
+                
+                <!-- Corner Sector Bars -->
+                <g transform="translate(48, 335)">
+                    <rect x="0" y="0" width="65" height="8" rx="4" fill="#ef4444"/>
+                    <rect x="73" y="0" width="85" height="8" rx="4" fill="#06b6d4"/>
+                    <rect x="166" y="0" width="55" height="8" rx="4" fill="#f59e0b"/>
+                    <text x="0" y="28" fill="#a1a1aa" font-family="monospace" font-size="13">S1: PURPLE  •  S2: OPTIMAL  •  S3: TRACK LIMITS CLEAR</text>
+                </g>
+            </svg>`;
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        }
+
+        // =========================================================================
+        // 2. PRE-POPULATED REALISTIC SAMPLE ARTICLES (F1, F2, F3, F4)
+        // =========================================================================
+        const DEFAULT_ARTICLES = [
+            {
+                id: 'sample-f1-monza',
+                series: 'F1',
+                raceTitle: 'Italian Grand Prix • Autodromo Nazionale Monza',
+                headline: 'One-Stop Undercut Gamble Delivers Sensational Monza Triumph Against All Odds',
+                podium: 'P1 Leclerc • P2 Piastri • P3 Norris',
+                author: 'Elena Rostova • Senior F1 Correspondent',
+                date: 'Nov 16, 2026',
+                isCustom: false,
+                image: createTrackCardArt(
+                    'FORMULA 1',
+                    'MONZA TEMPLE OF SPEED',
+                    '#ef4444',
+                    '#06b6d4',
+                    'M 460 150 L 660 150 C 690 150 695 175 675 190 L 620 225 C 605 235 615 260 640 270 L 675 285 C 695 295 685 320 655 315 L 495 280 C 470 275 450 245 445 215 L 435 175 C 430 158 442 150 460 150 Z'
+                ),
+                report: `In front of an electrifying sea of crimson at the Temple of Speed, a bold single-stop strategy turned the Italian Grand Prix on its head during the closing fifteen laps.\n\nWhile rival pit walls blinked first—committing to a two-stop Medium-Hard-Hard sequence due to early front-left graining—the race-winning crew kept their nerve on a 38-lap stint on the C3 Hard compound. Navigating backmarker traffic through the Ascari chicane with surgical precision, the leader maintained a 2.4-second buffer as fresher-tired pursuers closed at nearly seven-tenths per lap.\n\nA tense final two tours saw the gap shrink to just 1.1 seconds exiting Parabolica, but superior traction out of the final corner sealed one of the finest tactical victories of the modern ground-effect era.`,
+                analysis: `• Tire Degradation Curve: Front-left thermal graining peaked on Lap 14 on the Medium compound, costing two-stoppers 0.45s/lap in Lesmo 1 and 2. However, once the Hard tire cleaned up after Lap 24, degradation flattened to a remarkable 0.03s/lap.\n\n• Drag & Straight-Line Efficiency: Telemetry through the Main Straight speed trap showed a low-downforce rear wing trim yielding a +6.8 km/h advantage without DRS, neutralizing overtakes into Turn 1 (Variante del Rettifilo).\n\n• Pit Delta Impact: With Monza's pit lane loss sitting at 24.3 seconds, the single-stop execution netted a clean 19.8-second strategic cushion that proved insurmountable.`
+            },
+            {
+                id: 'sample-f2-silverstone',
+                series: 'F2',
+                raceTitle: 'Silverstone Feature Race • Northamptonshire',
+                headline: 'Late Safety Car Restart Sparks Three-Wide Stowe Thriller in F2 Feature',
+                podium: 'P1 Lindblad • P2 Browning • P3 Antonelli',
+                author: 'Marcus Sterling • Feeder Series Editor',
+                date: 'Nov 12, 2026',
+                isCustom: false,
+                image: createTrackCardArt(
+                    'FORMULA 2',
+                    'SILVERSTONE GP CIRCUIT',
+                    '#06b6d4',
+                    '#3b82f6',
+                    'M 470 130 L 565 115 L 635 160 L 605 210 L 680 245 L 650 315 L 545 300 L 515 250 L 455 265 L 440 190 Z'
+                ),
+                report: `Formula 2 delivered pure wheel-to-wheel chaos at Silverstone as a Lap 23 Safety Car compressed the entire field for a five-lap sprint to the flag.\n\nHaving pitted on Lap 8 to discard the fragile Soft option tires, the eventual winner had spent the middle stint conserving the Hard compound while rivals on the alternate strategy extended their opening runs. When a stranded car at Brooklands triggered the neutralisation, the alternate-strategy runners bolted on fresh Softs, emerging in P4 and P5.\n\nOn the Lap 25 restart, three cars fanned out side-by-side down the Hangar Straight into Stowe. Braking millimeters later on the outside line, the leader held firm around the sweep of Vale and Club, fending off ferocious DRS attacks all the way to the line.`,
+                analysis: `• Option vs. Prime Crossover: High-speed lateral loads through Maggotts and Becketts sheared the Soft tire shoulder within 7 laps, causing a 1.8-second lap-time cliff.\n\n• Battery & Overtake Mode Deployment: Telemetry logs reveal the leader saved 42% of their boost allocation specifically for the Hangar Straight exit, counteracting the Soft tire grip advantage of P2 through Chapel.\n\n• Sector 2 Dominance: Carrying 4 km/h higher minimum apex speed through Copse proved decisive in breaking the 1.0-second DRS tether before the final lap.`
+            },
+            {
+                id: 'sample-f3-spa',
+                series: 'F3',
+                raceTitle: 'Belgian Round • Circuit de Spa-Francorchamps',
+                headline: 'Slipstream Mastery Up Kemmel Straight Crowned in Damp-to-Dry Spa Classic',
+                podium: 'P1 Tsolov • P2 Stenshorne • P3 Mini',
+                author: 'Liam O’Connor • Trackside Analyst',
+                date: 'Nov 08, 2026',
+                isCustom: false,
+                image: createTrackCardArt(
+                    'FORMULA 3',
+                    'SPA-FRANCORCHAMPS',
+                    '#f59e0b',
+                    '#ef4444',
+                    'M 450 280 L 485 180 L 550 120 L 665 140 L 685 215 L 610 240 L 625 295 L 520 315 L 465 305 Z'
+                ),
+                report: `In classic Ardennes fashion, a drying racing line through Eau Rouge and Raidillon tested the bravery of all 30 Formula 3 contenders during Sunday's Feature Race.\n\nStarting from fourth on the grid on slick Pirelli mediums while two front-row starters gambled on wet-weather grooved tires, the opening two laps required delicate throttle modulation across damp kerbs at Pouhon and Blanchimont. Once a dry groove materialized on Lap 4, the slick-shod runners erased a nine-second deficit in just two sectors.\n\nA textbook tow through Raidillon set up a clean pass before Les Combes on Lap 9, after which controlled pace in the middle sector secured maximum championship points.`,
+                analysis: `• Crossover Lap Identification: On Lap 3, intermediate/wet runners posted a 2:14.8 while slick runners dropped to a 2:11.2—confirming a 3.6-second per lap crossover advantage once Sector 2 surface temperatures crossed 21°C.\n\n• Tow Efficiency at Spa: Being between 0.5s and 0.8s behind at La Source yielded a 14 km/h slipstream gain at the end of the Kemmel Straight. Closer than 0.4s caused front-wing wash through Eau Rouge.\n\n• Brake Bias Management: Shifting brake bias rearward by 1.5% into the Bus Stop chicane prevented front inside locking on the still-damp painted entry line.`
+            },
+            {
+                id: 'sample-f4-zandvoort',
+                series: 'F4',
+                raceTitle: 'Dutch F4 Championship • Circuit Zandvoort',
+                headline: '16-Year-Old Rookie Claims Maiden Single-Seater Win on Zandvoort’s Steep Banking',
+                podium: 'P1 Al-Azhari • P2 Slater • P3 Nakamura',
+                author: 'Sophie van Dijk • Junior Formula Scout',
+                date: 'Nov 03, 2026',
+                isCustom: false,
+                image: createTrackCardArt(
+                    'FORMULA 4',
+                    'ZANDVOORT DUNES',
+                    '#10b981',
+                    '#06b6d4',
+                    'M 465 150 L 635 135 C 675 135 685 175 645 195 L 570 215 L 650 265 C 670 285 645 315 605 310 L 480 285 C 445 275 445 225 475 205 L 455 170 Z'
+                ),
+                report: `Navigating coastal crosswinds and 18-degree banked corners, a fearless rookie performance lit up the Dutch Formula 4 round at Circuit Zandvoort.\n\nLaunching cleanly off the line to snatch second into Tarzanbocht, the young contender shadowed the championship leader relentlessly through the blind crests of Scheivlak. With overtaking notoriously difficult around the narrow dune circuit, pressure was applied via superior exit speed off the final banked Arie Luyendyk corner.\n\nOn Lap 11, a tiny lock-up from the leader into Turn 1 opened the inside door—and the rookie dived through cleanly without wheel contact to claim a breakthrough maiden victory.`,
+                analysis: `• Aerodynamic Pitch Sensitivity: F4 Tatuus chassis lack complex underfloor venturi tunnels, making mechanical platform control critical over Zandvoort's aggressive inside kerbs.\n\n• Banked Corner Line Selection: Running the high-line through Turn 3 (Hugenholtz) increased corner exit radius, translating into a 3 km/h speed advantage all the way up the hill to Scheivlak.\n\n• Consistency Metric: Across the final 8 green-flag laps, the winner’s lap times varied by less than 0.14 seconds—demonstrating remarkable tire temperature discipline for a first-year karting graduate.`
+            }
+        ];
+
+        // =========================================================================
+        // 3. STATE MANAGEMENT & LOCALSTORAGE PERSISTENCE
+        // =========================================================================
+        const STORAGE_KEY = 'apex_paddock_articles_v1';
+        let articles = [];
+        let activeCategory = 'ALL';
+        let activeArticleId = null;
+        let pendingPhotoDataUrl = '';
+
+        function initApp() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    articles = JSON.parse(saved);
+                    if (!Array.isArray(articles) || articles.length === 0) {
+                        articles = [...DEFAULT_ARTICLES];
+                        saveArticles();
+                    }
+                } else {
+                    articles = [...DEFAULT_ARTICLES];
+                    saveArticles();
+                }
+            } catch (e) {
+                console.error('Storage load error, using default articles:', e);
+                articles = [...DEFAULT_ARTICLES];
+            }
+            renderArticles();
+        }
+
+        function saveArticles() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(articles));
+            } catch (e) {
+                showToast('Storage limit reached. Consider using an external image URL instead of a large file.', 'error');
+            }
+        }
+
+        function resetDemoData() {
+            articles = [...DEFAULT_ARTICLES];
+            saveArticles();
+            activeCategory = 'ALL';
+            updateCategoryTabStyles();
+            renderArticles();
+            showToast('Default F1, F2, F3 & F4 sample reports restored.', 'info');
+        }
+
+        // =========================================================================
+        // 4. SERIES BADGE STYLING HELPER
+        // =========================================================================
+        function getSeriesBadgeClasses(series) {
+            switch (series) {
+                case 'F1':
+                    return 'bg-red-500/15 text-red-400 border border-red-500/30';
+                case 'F2':
+                    return 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30';
+                case 'F3':
+                    return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
+                case 'F4':
+                    return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+                default:
+                    return 'bg-zinc-800 text-zinc-300 border border-zinc-700';
+            }
+        }
+
+        function getSeriesAccentHex(series) {
+            switch (series) {
+                case 'F1': return '#ef4444';
+                case 'F2': return '#06b6d4';
+                case 'F3': return '#f59e0b';
+                case 'F4': return '#10b981';
+                default: return '#ef4444';
+            }
+        }
+
+        // =========================================================================
+        // 5. FILTERING & RENDERING ARTICLE FEED GRID
+        // =========================================================================
+        function filterCategory(cat) {
+            activeCategory = cat;
+            updateCategoryTabStyles();
+            renderArticles();
+        }
+
+        function updateCategoryTabStyles() {
+            const tabs = document.querySelectorAll('.cat-tab');
+            tabs.forEach(tab => {
+                const isSelected = tab.getAttribute('data-cat') === activeCategory;
+                if (isSelected) {
+                    tab.className = 'cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all bg-racing-red text-white shadow-md shadow-red-600/20';
+                } else {
+                    tab.className = 'cat-tab px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all text-zinc-400 hover:text-white hover:bg-zinc-800/60';
+                }
+            });
+
+            const heading = document.getElementById('feed-heading');
+            if (activeCategory === 'ALL') {
+                heading.textContent = 'Latest Race Reports & Analysis';
+            } else {
+                heading.textContent = `${activeCategory} Race Reports & Telemetry`;
+            }
+        }
+
+        function renderArticles() {
+            const grid = document.getElementById('articles-grid');
+            const emptyState = document.getElementById('empty-state');
+            const countBadge = document.getElementById('article-count');
+            const query = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+
+            const filtered = articles.filter(art => {
+                const matchesCat = activeCategory === 'ALL' || art.series === activeCategory;
+                const matchesQuery = !query ||
+                    art.headline.toLowerCase().includes(query) ||
+                    art.raceTitle.toLowerCase().includes(query) ||
+                    art.report.toLowerCase().includes(query) ||
+                    art.analysis.toLowerCase().includes(query);
+                return matchesCat && matchesQuery;
+            });
+
+            countBadge.textContent = `${filtered.length} ${filtered.length === 1 ? 'Report' : 'Reports'}`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            grid.innerHTML = filtered.map(article => {
+                const badgeClass = getSeriesBadgeClasses(article.series);
+                const excerpt = article.report.replace(/\n+/g, ' ').slice(0, 155) + (article.report.length > 155 ? '...' : '');
+                const fallbackImg = createTrackCardArt(
+                    article.series,
+                    article.raceTitle.toUpperCase().slice(0, 24),
+                    getSeriesAccentHex(article.series),
+                    '#06b6d4',
+                    'M 460 150 L 660 150 L 640 280 L 450 270 Z'
+                );
+
+                return `
+                <article onclick="openReaderModal('${article.id}')" 
+                    class="group bg-paddock-900 border border-zinc-800/90 hover:border-zinc-700 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-black/50 transition-all duration-300 flex flex-col cursor-pointer hover:-translate-y-1">
+                    
+                    <!-- Featured Photo Above Text -->
+                    <div class="relative aspect-video w-full bg-zinc-950 overflow-hidden border-b border-zinc-800">
+                        <img src="${article.image || fallbackImg}" 
+                             onerror="this.onerror=null; this.src='${fallbackImg}';"
+                             alt="${escapeHtml(article.headline)}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-paddock-900 via-transparent to-black/20 opacity-80"></div>
+                        
+                        <!-- Top Left Series Badge -->
+                        <div class="absolute top-3.5 left-3.5 flex items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider backdrop-blur-md bg-paddock-950/85 ${badgeClass}">
+                                ${escapeHtml(article.series)}
+                            </span>
+                            ${article.isCustom ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-mono uppercase bg-racing-cyan/20 text-racing-cyan border border-racing-cyan/30 backdrop-blur-md">Editorial</span>' : ''}
+                        </div>
+
+                        <!-- Bottom Metadata Overlay -->
+                        <div class="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs">
+                            <span class="font-mono text-zinc-200 font-semibold truncate pr-2">${escapeHtml(article.raceTitle)}</span>
+                            <span class="font-mono text-zinc-400 text-[11px] shrink-0">${escapeHtml(article.date)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Card Text Content -->
+                    <div class="p-6 flex-grow flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-white group-hover:text-racing-red transition-colors leading-snug mb-2.5">
+                                ${escapeHtml(article.headline)}
+                            </h2>
+                            <p class="text-sm text-zinc-400 leading-relaxed mb-5">
+                                ${escapeHtml(excerpt)}
+                            </p>
+                        </div>
+
+                        <!-- Card Footer -->
+                        <div class="pt-4 border-t border-zinc-800/80 flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-xs text-racing-cyan font-mono">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                                <span>Includes Race Analysis</span>
+                            </div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-zinc-300 group-hover:text-white flex items-center gap-1">
+                                Read Dispatch
+                                <svg class="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                </article>
+                `;
+            }).join('');
+        }
+
+        // =========================================================================
+        // 6. FULL ARTICLE READER MODAL & DELETE WORKFLOW
+        // =========================================================================
+        function openReaderModal(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+
+            activeArticleId = id;
+            cancelDeleteArticle();
+
+            const badge = document.getElementById('reader-series-badge');
+            badge.textContent = article.series;
+            badge.className = `px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-wider ${getSeriesBadgeClasses(article.series)}`;
+
+            document.getElementById('reader-circuit-top').textContent = article.raceTitle;
+            document.getElementById('reader-date').textContent = article.date;
+            document.getElementById('reader-headline').textContent = article.headline;
+            document.getElementById('reader-race-title').textContent = article.raceTitle;
+            document.getElementById('reader-podium').textContent = article.podium || 'Official Classification Confirmed';
+            document.getElementById('reader-author').textContent = article.author || 'Apex Paddock Desk';
+            document.getElementById('reader-report').textContent = article.report;
+            document.getElementById('reader-analysis').textContent = article.analysis;
+
+            const fallbackImg = createTrackCardArt(
+                article.series,
+                article.raceTitle.toUpperCase().slice(0, 24),
+                getSeriesAccentHex(article.series),
+                '#06b6d4',
+                'M 460 150 L 660 150 L 640 280 L 450 270 Z'
+            );
+            const imgEl = document.getElementById('reader-image');
+            imgEl.onerror = function() { this.onerror = null; this.src = fallbackImg; };
+            imgEl.src = article.image || fallbackImg;
+
+            // Show delete button for user-created articles (or any article the user wants to manage)
+            const deleteBtn = document.getElementById('reader-delete-btn');
+            if (article.isCustom) {
+                deleteBtn.classList.remove('hidden');
+                deleteBtn.classList.add('inline-flex');
+            } else {
+                deleteBtn.classList.add('hidden');
+                deleteBtn.classList.remove('inline-flex');
+            }
+
+            const modal = document.getElementById('reader-modal');
+            modal.classList.remove('hidden');
+            modal.scrollTop = 0;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeReaderModal() {
+            document.getElementById('reader-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+            activeArticleId = null;
+        }
+
+        function requestDeleteCurrentArticle() {
+            document.getElementById('delete-confirm-bar').classList.remove('hidden');
+        }
+
+        function cancelDeleteArticle() {
+            document.getElementById('delete-confirm-bar').classList.add('hidden');
+        }
+
+        function confirmDeleteArticle() {
+            if (!activeArticleId) return;
+            articles = articles.filter(a => a.id !== activeArticleId);
+            saveArticles();
+            closeReaderModal();
+            renderArticles();
+            showToast('Article removed from publication.', 'info');
+        }
+
+        // =========================================================================
+        // 7. ARTICLE PUBLISHER / EDITOR MODAL & IMAGE UPLOAD (FileReader)
+        // =========================================================================
+        function openPublisherModal() {
+            document.getElementById('publish-form').reset();
+            clearSelectedPhoto();
+            if (activeCategory !== 'ALL') {
+                document.getElementById('input-series').value = activeCategory;
+            }
+            document.getElementById('publisher-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePublisherModal() {
+            document.getElementById('publisher-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select a valid image file (JPG, PNG, WebP).', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                pendingPhotoDataUrl = e.target.result;
+                document.getElementById('input-photo-url').value = '';
+                document.getElementById('file-upload-label').textContent = file.name.slice(0, 22) + (file.name.length > 22 ? '...' : '');
+                showPhotoPreview(pendingPhotoDataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleUrlInput(event) {
+            const url = event.target.value.trim();
+            if (url) {
+                pendingPhotoDataUrl = '';
+                document.getElementById('input-photo-file').value = '';
+                document.getElementById('file-upload-label').textContent = 'Upload Photo from Device';
+                showPhotoPreview(url);
+            } else {
+                hidePhotoPreview();
+            }
+        }
+
+        function showPhotoPreview(src) {
+            const wrapper = document.getElementById('photo-preview-wrapper');
+            const img = document.getElementById('photo-preview-img');
+            img.src = src;
+            wrapper.classList.remove('hidden');
+        }
+
+        function hidePhotoPreview() {
+            const wrapper = document.getElementById('photo-preview-wrapper');
+            const img = document.getElementById('photo-preview-img');
+            img.src = '';
+            wrapper.classList.add('hidden');
+        }
+
+        function clearSelectedPhoto() {
+            pendingPhotoDataUrl = '';
+            document.getElementById('input-photo-file').value = '';
+            document.getElementById('input-photo-url').value = '';
+            document.getElementById('file-upload-label').textContent = 'Upload Photo from Device';
+            hidePhotoPreview();
+        }
+
+        function handlePublishSubmit(event) {
+            event.preventDefault();
+
+            const series = document.getElementById('input-series').value;
+            const raceTitle = document.getElementById('input-race').value.trim();
+            const headline = document.getElementById('input-headline').value.trim();
+            const podium = document.getElementById('input-podium').value.trim();
+            const author = document.getElementById('input-author').value.trim() || 'Paddock Correspondent';
+            const report = document.getElementById('input-report').value.trim();
+            const analysis = document.getElementById('input-analysis').value.trim();
+            const urlInput = document.getElementById('input-photo-url').value.trim();
+
+            if (!raceTitle || !headline || !report || !analysis) {
+                showToast('Please complete all required race report and analysis fields.', 'error');
+                return;
+            }
+
+            // Use uploaded FileReader Data URL, pasted URL, or generate a sleek trackside graphic fallback
+            const finalImage = pendingPhotoDataUrl || urlInput || createTrackCardArt(
+                `FORMULA ${series.replace('F', '')}`,
+                raceTitle.toUpperCase().slice(0, 26),
+                getSeriesAccentHex(series),
+                '#06b6d4',
+                'M 455 165 C 510 120 620 125 665 175 C 700 215 655 295 585 305 C 510 315 435 275 440 215 C 442 190 445 175 455 165 Z'
+            );
+
+            const today = new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
+            });
+
+            const newArticle = {
+                id: 'custom-' + Date.now(),
+                series,
+                raceTitle,
+                headline,
+                podium: podium || 'Official Race Classification',
+                author,
+                date: today,
+                image: finalImage,
+                report,
+                analysis,
+                isCustom: true
+            };
+
+            articles.unshift(newArticle);
+            saveArticles();
+            closePublisherModal();
+
+            // Switch to All or the newly published series so user sees it immediately
+            if (activeCategory !== 'ALL' && activeCategory !== series) {
+                filterCategory(series);
+            } else {
+                renderArticles();
+            }
+
+            showToast(`Published "${headline}" to ${series} feed!`, 'success');
+        }
+
+        // =========================================================================
+        // 8. UTILITIES: ESCAPE HTML & TOAST NOTIFICATIONS
+        // =========================================================================
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-paddock-900 border-emerald-500/50 text-emerald-300',
+                error: 'bg-paddock-900 border-red-500/50 text-red-300',
+                info: 'bg-paddock-900 border-cyan-500/50 text-cyan-300'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-2xl text-xs font-semibold transition-all duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full ${type === 'error' ? 'bg-red-400' : type === 'info' ? 'bg-cyan-400' : 'bg-emerald-400'}"></span>
+                <span>${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Keyboard Escape listener to close modals cleanly
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeReaderModal();
+                closePublisherModal();
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
